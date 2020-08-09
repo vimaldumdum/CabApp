@@ -28,7 +28,7 @@ public class customerLogin extends AppCompatActivity{
         setContentView(R.layout.activity_customer_login);
 
         Button login, register;
-        final EditText email, password;
+        final EditText email, password ;
 
         login = findViewById(R.id.customerLogin);
         register = findViewById(R.id.customerRegister);
