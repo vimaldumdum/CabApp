@@ -9,7 +9,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".customerMap"></activity>
+        <activity android:name=".driverMap"></activity>
+        <activity android:name=".customerMap" />
         <activity android:name=".driverLogin" />
         <activity android:name=".customerLogin" />
         <activity android:name=".profileSelection" />
