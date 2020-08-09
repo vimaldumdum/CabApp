@@ -3,4 +3,5 @@
     <string name="customer">customer</string>
     <string name="driver">driver</string>
     <string name="cabapp_welcome_page">CabApp Welcome page!</string>
+    <string name="title_activity_driver_map">Map</string>
 </resources>

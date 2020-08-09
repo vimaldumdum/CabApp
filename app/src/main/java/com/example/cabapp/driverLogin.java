@@ -105,4 +105,11 @@ public class driverLogin extends AppCompatActivity {
         if(user!=null)
             updateUI();
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        mAuth.signOut();
+    }
 }
