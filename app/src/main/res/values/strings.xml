@@ -4,4 +4,7 @@
     <string name="driver">driver</string>
     <string name="cabapp_welcome_page">CabApp Welcome page!</string>
     <string name="title_activity_driver_map">Map</string>
+    <string name="title_location_permission">Permission Required</string>
+    <string name="text_location_permission">Give Permission?</string>
+    <string name="ok">OK</string>
 </resources>
