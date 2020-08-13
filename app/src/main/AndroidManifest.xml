@@ -32,9 +32,11 @@
             android:value="@string/google_maps_key" />
 
         <activity
+            android:name=".customerMap"
+            android:label="@string/title_activity_customer_map"></activity>
+        <activity
             android:name=".driverMap"
-            android:label="@string/title_activity_driver_map"></activity>
-        <activity android:name=".customerMap" />
+            android:label="@string/title_activity_driver_map" />
         <activity android:name=".driverLogin" />
         <activity android:name=".customerLogin" />
         <activity android:name=".profileSelection" />
