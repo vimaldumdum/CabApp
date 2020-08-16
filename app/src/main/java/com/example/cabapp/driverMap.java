@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
@@ -29,10 +30,16 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.List;
 
 public class driverMap extends FragmentActivity implements OnMapReadyCallback {
 
@@ -41,7 +48,9 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
     LocationRequest mLocationRequest;
     LocationCallback mLocationCallback;
     FusedLocationProviderClient fusedLocationProviderClient;
+
     public String user = FirebaseAuth.getInstance().getCurrentUser().getUid();
+    public String assignedCustomerId = "";
 
     private Button logoutButton;
 
@@ -78,6 +87,62 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
                 logoutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(logoutIntent);
                 finish();
+            }
+        });
+
+        getAssignedCustomer();
+    }
+
+    private void getAssignedCustomer() {
+
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(user).child("customerRideId");
+        ref.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                if (snapshot.exists()) {
+                    assignedCustomerId = snapshot.getValue().toString();
+                    getAssignedCustomerLocation();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+
+    Marker customerLocationMarker;
+
+    private void getAssignedCustomerLocation() {
+
+        DatabaseReference assignedCustomerLocationRef = FirebaseDatabase.getInstance().getReference().child("customerRequests").child(assignedCustomerId).child("l");
+        assignedCustomerLocationRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    List<Object> map = (List<Object>) snapshot.getValue();
+
+                    double customerLocationLat = 0;
+                    double customerLocationLng = 0;
+
+                    if (map.get(0) != null)
+                        customerLocationLat = Double.parseDouble(map.get(0).toString());
+                    if (map.get(1) != null)
+                        customerLocationLng = Double.parseDouble(map.get(1).toString());
+
+                    LatLng customerPickupLatLng = new LatLng(customerLocationLat, customerLocationLng);
+
+                    if (customerLocationMarker != null)
+                        customerLocationMarker.remove();
+                    customerLocationMarker = mMap.addMarker(new MarkerOptions().position(customerPickupLatLng).title("pickup here"));
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
             }
         });
     }
