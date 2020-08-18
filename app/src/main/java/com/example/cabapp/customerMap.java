@@ -128,7 +128,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
 
     private void findAvailableDriver(final int radius) {
 
-        DatabaseReference driverReference = FirebaseDatabase.getInstance().getReference("driversAvailable");
+        final DatabaseReference driverReference = FirebaseDatabase.getInstance().getReference("driversAvailable");
 
         GeoFire driverGeoFire = new GeoFire(driverReference);
         GeoQuery geoQuery = driverGeoFire.queryAtLocation(new GeoLocation(pickupLocation.getLatitude(), pickupLocation.getLongitude()), radius);
@@ -147,6 +147,9 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                     driverRef.updateChildren(map);
 
                     requestCab.setText("Looking for driver Location");
+               /*     DatabaseReference removeDriverRef = FirebaseDatabase.getInstance().getReference().child("driversAvailable");
+                    GeoFire geoFireRemoveDriver = new GeoFire(removeDriverRef);
+                    geoFireRemoveDriver.removeLocation(driverFoundId);*/
                     getDriverLocation();
 
                 }
@@ -177,7 +180,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
 
     private void getDriverLocation() {
 
-        DatabaseReference driverLocationRef = FirebaseDatabase.getInstance().getReference().child("driversAvailable").child(driverFoundId).child("l");
+        DatabaseReference driverLocationRef = FirebaseDatabase.getInstance().getReference().child("driversWorking").child(driverFoundId).child("l");
         driverLocationRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -203,7 +206,12 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                         driverMarker.remove();
                     driverMarker = mMap.addMarker(new MarkerOptions().position(driverLocationLatLng).title("your driver"));
 
+                    Location driverLocation = new Location("");
+                    driverLocation.setLatitude(driverLocationLat);
+                    driverLocation.setLongitude(driverLocationLng);
+                    double distance = pickupLocation.distanceTo(driverLocation);
 
+                    Toast.makeText(customerMap.this, "driver is " + String.valueOf(distance) + "m away.", Toast.LENGTH_SHORT).show();
                 }
 
             }

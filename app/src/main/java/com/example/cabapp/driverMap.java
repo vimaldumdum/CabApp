@@ -51,6 +51,8 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
 
     public String user = FirebaseAuth.getInstance().getCurrentUser().getUid();
     public String assignedCustomerId = "";
+    public Boolean working = false;
+    public Boolean prevWorking = false;
 
     private Button logoutButton;
 
@@ -102,6 +104,8 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
 
                 if (snapshot.exists()) {
                     assignedCustomerId = snapshot.getValue().toString();
+                    working = true;
+
                     getAssignedCustomerLocation();
                 }
             }
@@ -150,8 +154,8 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
     public void startLocationUpdates() {
 
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(4000);
-        mLocationRequest.setFastestInterval(2000);
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(1000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
@@ -209,7 +213,21 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
 
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("driversAvailable");
+        DatabaseReference ref;
+
+        if (working) {
+            if (prevWorking != working) {
+                stopGeoFireAvailable();
+                prevWorking = working;
+            }
+            ref = FirebaseDatabase.getInstance().getReference().child("driversWorking");
+        } else {
+            if (prevWorking != working) {
+                stopGeoFireWorking();
+                prevWorking = working;
+            }
+            ref = FirebaseDatabase.getInstance().getReference().child("driversAvailable");
+        }
 
         GeoFire geoFire = new GeoFire(ref);
         geoFire.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
@@ -227,8 +245,20 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
         Toast.makeText(this, "map ready", Toast.LENGTH_SHORT).show();
     }
 
-    public void stopGeoFire() {
+    public void stopGeoFireAvailable() {
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("driversAvailable");
+
+        GeoFire geoFire = new GeoFire(ref);
+        geoFire.removeLocation(user, new GeoFire.CompletionListener() {
+            @Override
+            public void onComplete(String key, DatabaseError error) {
+                Toast.makeText(driverMap.this, "driver removed", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    public void stopGeoFireWorking() {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("driversWorking");
 
         GeoFire geoFire = new GeoFire(ref);
         geoFire.removeLocation(user, new GeoFire.CompletionListener() {
@@ -242,7 +272,10 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
     @Override
     protected void onPause() {
         super.onPause();
-        stopGeoFire();
+        if (working)
+            stopGeoFireWorking();
+        else
+            stopGeoFireAvailable();
         stopLocationUpdates();
     }
 
