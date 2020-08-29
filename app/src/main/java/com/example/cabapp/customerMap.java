@@ -31,6 +31,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -109,7 +110,8 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                 if (requested) {
                     requested = false;
                     geoQuery.removeAllListeners();
-                    driverLocationRef.removeEventListener(driverLocationRefListener);
+                    if (driverLocationRefListener != null)
+                        driverLocationRef.removeEventListener(driverLocationRefListener);
 
                     if (driverFoundId != null) {
                         DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(driverFoundId);
@@ -124,6 +126,8 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
 
                     if (driverMarker != null)
                         driverMarker.remove();
+                    if (pickupMarker != null)
+                        pickupMarker.remove();
 
                     requestCab.setText("Find cab");
                 } else {
@@ -137,7 +141,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
 
                     LatLng pickUp = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
                     pickupLocation = mLastLocation;
-                    mMap.addMarker(new MarkerOptions().position(pickUp).title("Pickup here"));
+                    pickupMarker = mMap.addMarker(new MarkerOptions().position(pickUp).title("Pickup here").icon(BitmapDescriptorFactory.fromResource(R.mipmap.pickup_foreground)));
 
                     findAvailableDriver(1);
                 }
@@ -148,6 +152,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
 
     }
 
+    private Marker pickupMarker;
     private boolean driverFound = false;
     private String driverFoundId;
 
@@ -229,7 +234,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
 
                     if (driverMarker != null)
                         driverMarker.remove();
-                    driverMarker = mMap.addMarker(new MarkerOptions().position(driverLocationLatLng).title("your driver"));
+                    driverMarker = mMap.addMarker(new MarkerOptions().position(driverLocationLatLng).title("your driver").icon(BitmapDescriptorFactory.fromResource(R.mipmap.texi_foreground)));
 
                     Location driverLocation = new Location("");
                     driverLocation.setLatitude(driverLocationLat);
