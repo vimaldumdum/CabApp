@@ -49,6 +49,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     private GoogleMap mMap;
     private Button requestCab;
+    private Boolean requested = false;
 
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest mLocationRequest;
@@ -105,19 +106,43 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
             @Override
             public void onClick(View view) {
 
-                requestCab.setText("requesting cab...");
-                requestCab.setEnabled(false);
+                if (requested) {
+                    requested = false;
+                    geoQuery.removeAllListeners();
+                    driverLocationRef.removeEventListener(driverLocationRefListener);
 
-                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("customerRequests");
+                    if (driverFoundId != null) {
+                        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(driverFoundId);
+                        databaseReference.setValue(true);
+                        driverFoundId = null;
+                    }
+                    driverFound = false;
 
-                GeoFire geoFire = new GeoFire(ref);
-                geoFire.setLocation(userId, new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()));
+                    DatabaseReference databaseReference1 = FirebaseDatabase.getInstance().getReference().child("customerRequests");
+                    GeoFire geoFire = new GeoFire(databaseReference1);
+                    geoFire.removeLocation(userId);
 
-                LatLng pickUp = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-                pickupLocation = mLastLocation;
-                mMap.addMarker(new MarkerOptions().position(pickUp).title("Pickup here"));
+                    if (driverMarker != null)
+                        driverMarker.remove();
 
-                findAvailableDriver(1);
+                    requestCab.setText("Find cab");
+                } else {
+                    requested = true;
+                    requestCab.setText("requesting cab...");
+
+                    DatabaseReference ref = FirebaseDatabase.getInstance().getReference("customerRequests");
+
+                    GeoFire geoFire = new GeoFire(ref);
+                    geoFire.setLocation(userId, new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()));
+
+                    LatLng pickUp = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+                    pickupLocation = mLastLocation;
+                    mMap.addMarker(new MarkerOptions().position(pickUp).title("Pickup here"));
+
+                    findAvailableDriver(1);
+                }
+
+
             }
         });
 
@@ -126,17 +151,18 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
     private boolean driverFound = false;
     private String driverFoundId;
 
+    GeoQuery geoQuery;
     private void findAvailableDriver(final int radius) {
 
         final DatabaseReference driverReference = FirebaseDatabase.getInstance().getReference("driversAvailable");
 
         GeoFire driverGeoFire = new GeoFire(driverReference);
-        GeoQuery geoQuery = driverGeoFire.queryAtLocation(new GeoLocation(pickupLocation.getLatitude(), pickupLocation.getLongitude()), radius);
+        geoQuery = driverGeoFire.queryAtLocation(new GeoLocation(pickupLocation.getLatitude(), pickupLocation.getLongitude()), radius);
         geoQuery.removeAllListeners();
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
-                if (!driverFound) {
+                if (!driverFound && requested) {
                     driverFound = true;
                     driverFoundId = key;
                     Toast.makeText(customerMap.this, "driver found: " + driverFoundId + " " + "radius: " + radius, Toast.LENGTH_SHORT).show();
@@ -147,9 +173,6 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                     driverRef.updateChildren(map);
 
                     requestCab.setText("Looking for driver Location");
-               /*     DatabaseReference removeDriverRef = FirebaseDatabase.getInstance().getReference().child("driversAvailable");
-                    GeoFire geoFireRemoveDriver = new GeoFire(removeDriverRef);
-                    geoFireRemoveDriver.removeLocation(driverFoundId);*/
                     getDriverLocation();
 
                 }
@@ -177,11 +200,13 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
     }
 
     Marker driverMarker;
+    private DatabaseReference driverLocationRef;
+    private ValueEventListener driverLocationRefListener;
 
     private void getDriverLocation() {
 
-        DatabaseReference driverLocationRef = FirebaseDatabase.getInstance().getReference().child("driversWorking").child(driverFoundId).child("l");
-        driverLocationRef.addValueEventListener(new ValueEventListener() {
+        driverLocationRef = FirebaseDatabase.getInstance().getReference().child("driversWorking").child(driverFoundId).child("l");
+        driverLocationRefListener = driverLocationRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
 
@@ -211,7 +236,12 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                     driverLocation.setLongitude(driverLocationLng);
                     double distance = pickupLocation.distanceTo(driverLocation);
 
-                    Toast.makeText(customerMap.this, "driver is " + String.valueOf(distance) + "m away.", Toast.LENGTH_SHORT).show();
+                    if (distance < 100) {
+                        requestCab.setText("Driver arrived");
+                    } else {
+                        Toast.makeText(customerMap.this, "driver is " + String.valueOf(distance) + "m away.", Toast.LENGTH_SHORT).show();
+                    }
+
                 }
 
             }

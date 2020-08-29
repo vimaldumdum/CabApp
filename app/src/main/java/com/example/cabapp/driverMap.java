@@ -95,10 +95,13 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
         getAssignedCustomer();
     }
 
+    private DatabaseReference ref;
+    private ValueEventListener refListener;
+
     private void getAssignedCustomer() {
 
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(user).child("customerRideId");
-        ref.addValueEventListener(new ValueEventListener() {
+        ref = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(user).child("customerRideId");
+        refListener = ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
 
@@ -107,6 +110,13 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
                     working = true;
 
                     getAssignedCustomerLocation();
+                } else {
+                    working = false;
+                    if (customerLocationMarker != null)
+                        customerLocationMarker.remove();
+                    assignedCustomerId = null;
+                  /*  if(refListener != null)
+                        ref.removeEventListener(refListener);*/
                 }
             }
 
@@ -213,23 +223,23 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
 
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        DatabaseReference ref;
+        DatabaseReference reference;
 
         if (working) {
             if (prevWorking != working) {
                 stopGeoFireAvailable();
                 prevWorking = working;
             }
-            ref = FirebaseDatabase.getInstance().getReference().child("driversWorking");
+            reference = FirebaseDatabase.getInstance().getReference().child("driversWorking");
         } else {
             if (prevWorking != working) {
                 stopGeoFireWorking();
                 prevWorking = working;
             }
-            ref = FirebaseDatabase.getInstance().getReference().child("driversAvailable");
+            reference = FirebaseDatabase.getInstance().getReference().child("driversAvailable");
         }
 
-        GeoFire geoFire = new GeoFire(ref);
+        GeoFire geoFire = new GeoFire(reference);
         geoFire.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
     }
 
