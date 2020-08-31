@@ -49,7 +49,10 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
 
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     private GoogleMap mMap;
+
     private Button requestCab;
+    private Button settings;
+
     private Boolean requested = false;
 
     FusedLocationProviderClient fusedLocationProviderClient;
@@ -70,6 +73,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
 
         Button logout = findViewById(R.id.logoutCustomer);
         requestCab = findViewById(R.id.requestCab);
+        settings = findViewById(R.id.customerSettings);
 
         fusedLocationProviderClient = new FusedLocationProviderClient(this);
 
@@ -147,6 +151,16 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                 }
 
 
+            }
+        });
+
+        settings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                Intent intent = new Intent(customerMap.this, customerSettings.class);
+                startActivity(intent);
+                return;
             }
         });
 
