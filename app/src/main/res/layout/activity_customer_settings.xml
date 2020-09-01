@@ -4,11 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".customerSettings"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:gravity="center">
+
+    <ImageView
+        android:id="@+id/profilePicture"
+        android:layout_width="150sp"
+        android:layout_height="150sp"
+        android:src="@mipmap/profile_foreground" />
 
     <EditText
-        android:id="@+id/customerName"
+        android:id="@+id/nameCustomer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
@@ -16,7 +22,7 @@
         android:hint="Name" />
 
     <EditText
-        android:id="@+id/customerPhone"
+        android:id="@+id/phoneCustomer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
@@ -24,13 +30,13 @@
         android:hint="Phone" />
 
     <Button
-        android:id="@+id/customerSettingsConfirm"
+        android:id="@+id/confirmButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="confirm" />
 
     <Button
-        android:id="@+id/customerSettingsBack"
+        android:id="@+id/backButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="back" />

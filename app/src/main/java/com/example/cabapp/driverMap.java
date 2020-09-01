@@ -10,12 +10,16 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import com.bumptech.glide.Glide;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -41,6 +45,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.List;
+import java.util.Map;
 
 public class driverMap extends FragmentActivity implements OnMapReadyCallback {
 
@@ -49,6 +54,10 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
     LocationRequest mLocationRequest;
     LocationCallback mLocationCallback;
     FusedLocationProviderClient fusedLocationProviderClient;
+
+    private LinearLayout customerInfo;
+    private ImageView customerProfileImage;
+    private TextView customerName, customerPhone;
 
     public String user = FirebaseAuth.getInstance().getCurrentUser().getUid();
     public String assignedCustomerId = "";
@@ -67,6 +76,11 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
         mapFragment.getMapAsync(this);
 
         logoutButton = findViewById(R.id.logoutButton);
+
+        customerInfo = (LinearLayout) findViewById(R.id.customerInfo);
+        customerProfileImage = (ImageView) findViewById(R.id.customerProfileImage);
+        customerName = (TextView) findViewById(R.id.customerName);
+        customerPhone = (TextView) findViewById(R.id.customerPhone);
 
         fusedLocationProviderClient = new FusedLocationProviderClient(this);
 
@@ -109,6 +123,30 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
                 if (snapshot.exists()) {
                     assignedCustomerId = snapshot.getValue().toString();
                     working = true;
+                    DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("users").child("customer").child(assignedCustomerId);
+                    ref.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
+
+                            if (map.get("name") != null) {
+                                customerName.setText(map.get("name").toString());
+                            }
+                            if (map.get("phone") != null) {
+                                customerPhone.setText(map.get("phone").toString());
+                            }
+                            if (map.get("profilePicture") != null) {
+                                String imageUri = map.get("profilePicture").toString();
+                                Glide.with(driverMap.this).load(imageUri).into(customerProfileImage);
+                            }
+                            customerInfo.setVisibility(View.VISIBLE);
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+
+                        }
+                    });
 
                     getAssignedCustomerLocation();
                 } else {
@@ -181,9 +219,6 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
 
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
                 new AlertDialog.Builder(this)
                         .setTitle(R.string.title_location_permission)
                         .setMessage(R.string.text_location_permission)
@@ -236,6 +271,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
             if (prevWorking != working) {
                 stopGeoFireWorking();
                 prevWorking = working;
+                customerInfo.setVisibility(View.GONE);
             }
             reference = FirebaseDatabase.getInstance().getReference().child("driversAvailable");
         }
@@ -253,7 +289,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        Toast.makeText(this, "map ready", Toast.LENGTH_SHORT).show();
+        //  Toast.makeText(this, "map ready", Toast.LENGTH_SHORT).show();
     }
 
     public void stopGeoFireAvailable() {
@@ -263,7 +299,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
         geoFire.removeLocation(user, new GeoFire.CompletionListener() {
             @Override
             public void onComplete(String key, DatabaseError error) {
-                Toast.makeText(driverMap.this, "driver removed", Toast.LENGTH_SHORT).show();
+                //   Toast.makeText(driverMap.this, "driver removed", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -275,7 +311,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
         geoFire.removeLocation(user, new GeoFire.CompletionListener() {
             @Override
             public void onComplete(String key, DatabaseError error) {
-                Toast.makeText(driverMap.this, "driver removed", Toast.LENGTH_SHORT).show();
+                //  Toast.makeText(driverMap.this, "driver removed", Toast.LENGTH_SHORT).show();
             }
         });
     }
