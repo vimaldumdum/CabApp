@@ -12,6 +12,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -77,8 +79,10 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
     private ImageView driverProfileImage;
     private TextView driverName, driverPhone, driverCar;
     private LinearLayout driverInfo;
+    private RadioGroup radioGroup;
 
     private String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+    private String service = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,6 +106,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
         driverPhone = (TextView) findViewById(R.id.driverPhone);
         driverCar = (TextView) findViewById(R.id.driverCar);
         driverInfo = (LinearLayout) findViewById(R.id.driverInfo);
+        radioGroup = (RadioGroup) findViewById(R.id.radioGroup);
 
         fusedLocationProviderClient = new FusedLocationProviderClient(this);
 
@@ -181,6 +186,13 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                     pickupLocation = mLastLocation;
                     pickupMarker = mMap.addMarker(new MarkerOptions().position(pickUp).title("Pickup here").icon(BitmapDescriptorFactory.fromResource(R.mipmap.pickup_foreground)));
 
+                    int selected = radioGroup.getCheckedRadioButtonId();
+                    final RadioButton radioButton = (RadioButton) findViewById(selected);
+
+                    if (radioButton.getText() != null) {
+                        service = radioButton.getText().toString();
+                    }
+
                     findAvailableDriver(1);
                 }
 
@@ -232,19 +244,39 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
                 if (!driverFound && requested) {
-                    driverFound = true;
-                    driverFoundId = key;
-                    Toast.makeText(customerMap.this, "driver found: " + driverFoundId + " " + "radius: " + radius, Toast.LENGTH_SHORT).show();
 
-                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(driverFoundId).child("customerRequest");
-                    HashMap map = new HashMap();
-                    map.put("customerRideId", userId);
-                    map.put("destination", destination);
-                    driverRef.updateChildren(map);
+                    DatabaseReference mCustomerDatabase = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(key);
+                    mCustomerDatabase.addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            if (snapshot.exists() == true && snapshot.getChildrenCount() > 0) {
+                                Map<String, Object> mapService = (Map<String, Object>) snapshot.getValue();
+                                if (driverFound)
+                                    return;
+                                if (mapService.get("service").equals(service)) {
+                                    driverFound = true;
+                                    driverFoundId = snapshot.getKey();
+                                    Toast.makeText(customerMap.this, "driver found: " + driverFoundId + " " + "radius: " + radius, Toast.LENGTH_SHORT).show();
 
-                    requestCab.setText("Looking for driver Location");
-                    getAssignedDriverInfo();
-                    getDriverLocation();
+                                    DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(driverFoundId).child("customerRequest");
+                                    HashMap map = new HashMap();
+                                    map.put("customerRideId", userId);
+                                    map.put("destination", destination);
+                                    driverRef.updateChildren(map);
+
+                                    requestCab.setText("Looking for driver Location");
+                                    getAssignedDriverInfo();
+                                    getDriverLocation();
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+
+                        }
+                    });
+
 
                 }
             }

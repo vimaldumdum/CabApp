@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,8 +40,10 @@ public class driverSettings extends AppCompatActivity {
     private Button confirm, back;
     private TextView nameText, phoneText, carText;
     private ImageView profileImage;
+    private RadioGroup radioGroup;
 
     private String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+    private String service = "";
     private Uri profileImageUri;
 
     private DatabaseReference databaseReference;
@@ -57,6 +61,8 @@ public class driverSettings extends AppCompatActivity {
         carText = findViewById(R.id.carDriver);
 
         profileImage = findViewById(R.id.profilePictureDriver);
+
+        radioGroup = (RadioGroup) findViewById(R.id.radioGroup);
 
         databaseReference = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(userId);
 
@@ -95,6 +101,14 @@ public class driverSettings extends AppCompatActivity {
         String name = nameText.getText().toString().trim();
         String phone = phoneText.getText().toString().trim();
         String car = carText.getText().toString().trim();
+
+        int selected = radioGroup.getCheckedRadioButtonId();
+        final RadioButton radioButton = (RadioButton) findViewById(selected);
+
+        if (radioButton.getText() != null) {
+            service = radioButton.getText().toString();
+            map.put("service", service);
+        }
 
         map.put("name", name);
         map.put("phone", phone);
@@ -167,6 +181,19 @@ public class driverSettings extends AppCompatActivity {
                     if (map.get("profilePicture") != null) {
                         Uri imageUri = Uri.parse(map.get("profilePicture").toString());
                         Glide.with(driverSettings.this).load(imageUri).into(profileImage);
+                    }
+                    if (map.get("service") != null) {
+                        switch (map.get("service").toString()) {
+                            case "CAB MINI":
+                                radioGroup.check(R.id.cabMini);
+                                break;
+                            case "CABX":
+                                radioGroup.check(R.id.cabX);
+                                break;
+                            case "CABXL":
+                                radioGroup.check(R.id.cabXL);
+                                break;
+                        }
                     }
                 }
             }

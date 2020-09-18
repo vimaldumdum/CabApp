@@ -36,6 +36,33 @@
         android:ems="10"
         android:hint="Car" />
 
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/radioGroup"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/cabMini"
+            android:text="CAB MINI" />
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/cabX"
+            android:text="CABX" />
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/cabXL"
+            android:text="CABXL" />
+
+
+    </RadioGroup>
+
     <Button
         android:id="@+id/driverConfirm"
         android:layout_marginTop="10sp"
