@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -80,6 +81,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
     private TextView driverName, driverPhone, driverCar;
     private LinearLayout driverInfo;
     private RadioGroup radioGroup;
+    LinearLayout radioLayout;
 
     private String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
     private String service = "";
@@ -107,6 +109,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
         driverCar = (TextView) findViewById(R.id.driverCar);
         driverInfo = (LinearLayout) findViewById(R.id.driverInfo);
         radioGroup = (RadioGroup) findViewById(R.id.radioGroup);
+        radioLayout = (LinearLayout) findViewById(R.id.radioLayout);
 
         fusedLocationProviderClient = new FusedLocationProviderClient(this);
 
@@ -154,6 +157,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                     if (driverFoundId != null) {
                         DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(driverFoundId).child("customerRequest");
                         databaseReference.removeValue();
+                        Log.d("removeLog", "sdf");
                         driverFoundId = null;
                     }
                     driverFound = false;
@@ -170,6 +174,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                     requestCab.setText("Find cab");
 
                     driverInfo.setVisibility(View.GONE);
+                    radioLayout.setVisibility(View.VISIBLE);
                     driverName.setText("");
                     driverCar.setText("");
                     driverPhone.setText("");
@@ -246,14 +251,14 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                 if (!driverFound && requested) {
 
                     DatabaseReference mCustomerDatabase = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(key);
-                    mCustomerDatabase.addValueEventListener(new ValueEventListener() {
+                    mCustomerDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                             if (snapshot.exists() == true && snapshot.getChildrenCount() > 0) {
                                 Map<String, Object> mapService = (Map<String, Object>) snapshot.getValue();
                                 if (driverFound)
                                     return;
-                                if (mapService.get("service").equals(service)) {
+                                if (mapService.get("service").equals(service) && !driverFound) {
                                     driverFound = true;
                                     driverFoundId = snapshot.getKey();
                                     Toast.makeText(customerMap.this, "driver found: " + driverFoundId + " " + "radius: " + radius, Toast.LENGTH_SHORT).show();
@@ -265,6 +270,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                                     driverRef.updateChildren(map);
 
                                     requestCab.setText("Looking for driver Location");
+                                    radioLayout.setVisibility(View.GONE);
                                     getAssignedDriverInfo();
                                     getDriverLocation();
                                 }
