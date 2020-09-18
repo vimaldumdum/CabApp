@@ -8,5 +8,6 @@
     <string name="text_location_permission">Give Permission?</string>
     <string name="ok">OK</string>
     <string name="logout">logout</string>
+    <string name="api_key">AIzaSyBUkK-7Qf8dBNqZnc7mjLXmZEaXrHsN7Xk</string>
     <string name="title_activity_customer_map">Map</string>
 </resources>

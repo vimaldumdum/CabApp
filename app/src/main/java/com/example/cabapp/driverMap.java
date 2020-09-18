@@ -57,10 +57,12 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
 
     private LinearLayout customerInfo;
     private ImageView customerProfileImage;
-    private TextView customerName, customerPhone;
+    private TextView customerName, customerPhone, customerDestination;
+    private Button settingsButton;
 
     public String user = FirebaseAuth.getInstance().getCurrentUser().getUid();
     public String assignedCustomerId = "";
+    public String customerDesti = "";
     public Boolean working = false;
     public Boolean prevWorking = false;
 
@@ -76,11 +78,13 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
         mapFragment.getMapAsync(this);
 
         logoutButton = findViewById(R.id.logoutButton);
+        settingsButton = findViewById(R.id.driverSettings);
 
         customerInfo = (LinearLayout) findViewById(R.id.customerInfo);
         customerProfileImage = (ImageView) findViewById(R.id.customerProfileImage);
         customerName = (TextView) findViewById(R.id.customerName);
         customerPhone = (TextView) findViewById(R.id.customerPhone);
+        customerDestination = (TextView) findViewById(R.id.customerDestination);
 
         fusedLocationProviderClient = new FusedLocationProviderClient(this);
 
@@ -98,12 +102,23 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
             @Override
             public void onClick(View view) {
                 FirebaseAuth mAuth = FirebaseAuth.getInstance();
-                mAuth.signOut();
                 stopLocationUpdates();
+                stopGeoFireWorking();
+                stopGeoFireAvailable();
+                mAuth.signOut();
                 Intent logoutIntent = new Intent(driverMap.this, profileSelection.class);
                 logoutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(logoutIntent);
                 finish();
+            }
+        });
+
+        settingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(driverMap.this, driverSettings.class);
+                startActivity(intent);
+                return;
             }
         });
 
@@ -115,16 +130,18 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
 
     private void getAssignedCustomer() {
 
-        ref = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(user).child("customerRideId");
+        ref = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(user).child("customerRequest");
         refListener = ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
 
                 if (snapshot.exists()) {
-                    assignedCustomerId = snapshot.getValue().toString();
+                    Map<String, Object> mapC = (Map<String, Object>) snapshot.getValue();
+                    assignedCustomerId = mapC.get("customerRideId").toString();
+                    customerDesti = mapC.get("destination").toString();
                     working = true;
                     DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("users").child("customer").child(assignedCustomerId);
-                    ref.addListenerForSingleValueEvent(new ValueEventListener() {
+                    ref.addValueEventListener(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                             Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
@@ -139,6 +156,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
                                 String imageUri = map.get("profilePicture").toString();
                                 Glide.with(driverMap.this).load(imageUri).into(customerProfileImage);
                             }
+                            customerDestination.setText(customerDesti);
                             customerInfo.setVisibility(View.VISIBLE);
                         }
 
@@ -271,7 +289,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
             if (prevWorking != working) {
                 stopGeoFireWorking();
                 prevWorking = working;
-                customerInfo.setVisibility(View.GONE);
+                customerInfo.setVisibility(View.INVISIBLE);
             }
             reference = FirebaseDatabase.getInstance().getReference().child("driversAvailable");
         }
@@ -293,19 +311,20 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
     }
 
     public void stopGeoFireAvailable() {
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("driversAvailable");
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("driversAvailable");
 
         GeoFire geoFire = new GeoFire(ref);
         geoFire.removeLocation(user, new GeoFire.CompletionListener() {
             @Override
             public void onComplete(String key, DatabaseError error) {
-                //   Toast.makeText(driverMap.this, "driver removed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(driverMap.this, "driver removed", Toast.LENGTH_SHORT).show();
+
             }
         });
     }
 
     public void stopGeoFireWorking() {
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("driversWorking");
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("driversWorking");
 
         GeoFire geoFire = new GeoFire(ref);
         geoFire.removeLocation(user, new GeoFire.CompletionListener() {
@@ -324,6 +343,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
         else
             stopGeoFireAvailable();
         stopLocationUpdates();
+        //  Toast.makeText(this, "driver removed", Toast.LENGTH_SHORT).show();
     }
 
     @Override

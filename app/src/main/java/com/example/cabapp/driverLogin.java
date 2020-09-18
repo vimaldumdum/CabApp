@@ -55,8 +55,8 @@ public class driverLogin extends AppCompatActivity {
 
                             String userId = mAuth.getUid();
 
-                            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(userId);
-                            databaseReference.setValue(true);
+                            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(userId).child("name");
+                            databaseReference.setValue("NO NAME");
                             updateUI();
                         }
                     }
