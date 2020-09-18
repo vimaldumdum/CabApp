@@ -9,5 +9,6 @@
     <string name="ok">OK</string>
     <string name="logout">logout</string>
     <string name="api_key">AIzaSyBUkK-7Qf8dBNqZnc7mjLXmZEaXrHsN7Xk</string>
+    <string name="googleMapsApi">AIzaSyCrfE4nkz_h21ypMS3qJXik38vg1YZ91KI</string>
     <string name="title_activity_customer_map">Map</string>
 </resources>

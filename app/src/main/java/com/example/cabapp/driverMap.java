@@ -20,6 +20,11 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import com.bumptech.glide.Glide;
+import com.directions.route.AbstractRouting;
+import com.directions.route.Route;
+import com.directions.route.RouteException;
+import com.directions.route.Routing;
+import com.directions.route.RoutingListener;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -37,6 +42,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -44,16 +51,22 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class driverMap extends FragmentActivity implements OnMapReadyCallback {
+public class driverMap extends FragmentActivity implements OnMapReadyCallback, RoutingListener {
 
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     private GoogleMap mMap;
     LocationRequest mLocationRequest;
     LocationCallback mLocationCallback;
     FusedLocationProviderClient fusedLocationProviderClient;
+    public LatLng mLastLocation;
+
+    private List<Polyline> polylines;
+    private static final int[] COLORS = new int[]{R.color.primary_dark_material_light};
+
 
     private LinearLayout customerInfo;
     private ImageView customerProfileImage;
@@ -79,6 +92,8 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
 
         logoutButton = findViewById(R.id.logoutButton);
         settingsButton = findViewById(R.id.driverSettings);
+
+        polylines = new ArrayList<>();
 
         customerInfo = (LinearLayout) findViewById(R.id.customerInfo);
         customerProfileImage = (ImageView) findViewById(R.id.customerProfileImage);
@@ -208,6 +223,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
                     if (customerLocationMarker != null)
                         customerLocationMarker.remove();
                     customerLocationMarker = mMap.addMarker(new MarkerOptions().position(customerPickupLatLng).title("pickup here").icon(BitmapDescriptorFactory.fromResource(R.mipmap.pickup_foreground)));
+                    drawRouteToPickup(customerPickupLatLng);
                 }
             }
 
@@ -217,6 +233,18 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
             }
         });
     }
+
+    private void drawRouteToPickup(LatLng pickup) {
+        Routing routing = new Routing.Builder()
+                .key(getString(R.string.googleMapsApi))
+                .travelMode(AbstractRouting.TravelMode.DRIVING)
+                .withListener(this)
+                .alternativeRoutes(false)
+                .waypoints(mLastLocation, pickup)
+                .build();
+        routing.execute();
+    }
+
 
     public void startLocationUpdates() {
 
@@ -272,6 +300,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
         }
         mMap.setMyLocationEnabled(true);
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        mLastLocation = latLng;
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(18));
 
@@ -287,6 +316,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
             reference = FirebaseDatabase.getInstance().getReference().child("driversWorking");
         } else {
             if (prevWorking != working) {
+                erasePolyLines();
                 stopGeoFireWorking();
                 prevWorking = working;
                 customerInfo.setVisibility(View.INVISIBLE);
@@ -350,5 +380,57 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback {
     protected void onResume() {
         super.onResume();
         startLocationUpdates();
+    }
+
+    @Override
+    public void onRoutingFailure(RouteException e) {
+        if (e != null) {
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(this, "Something went wrong, Try again", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onRoutingStart() {
+
+    }
+
+    @Override
+    public void onRoutingSuccess(ArrayList<Route> route, int shortestRouteIndex) {
+        if (polylines.size() > 0) {
+            for (Polyline poly : polylines) {
+                poly.remove();
+            }
+        }
+
+        polylines = new ArrayList<>();
+        //add route(s) to the map.
+        for (int i = 0; i < route.size(); i++) {
+
+            //In case of more than 5 alternative routes
+            int colorIndex = i % COLORS.length;
+
+            PolylineOptions polyOptions = new PolylineOptions();
+            polyOptions.color(getResources().getColor(COLORS[colorIndex]));
+            polyOptions.width(10 + i * 3);
+            polyOptions.addAll(route.get(i).getPoints());
+            Polyline polyline = mMap.addPolyline(polyOptions);
+            polylines.add(polyline);
+
+            Toast.makeText(getApplicationContext(), "Route " + (i + 1) + ": distance - " + route.get(i).getDistanceValue() + ": duration - " + route.get(i).getDurationValue(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onRoutingCancelled() {
+
+    }
+
+    private void erasePolyLines() {
+        for (Polyline line : polylines) {
+            line.remove();
+        }
+        polylines.clear();
     }
 }
