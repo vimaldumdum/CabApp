@@ -72,7 +72,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
     private LinearLayout customerInfo;
     private ImageView customerProfileImage;
     private TextView customerName, customerPhone, customerDestination;
-    private Button settingsButton, rideStatus;
+    private Button settingsButton, rideStatus, driverHistory;
 
     public String user = FirebaseAuth.getInstance().getCurrentUser().getUid();
     public String assignedCustomerId = "";
@@ -107,6 +107,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
         customerPhone = (TextView) findViewById(R.id.customerPhone);
         customerDestination = (TextView) findViewById(R.id.customerDestination);
         rideStatus = (Button) findViewById(R.id.rideStatus);
+        driverHistory = (Button) findViewById(R.id.driverHistory);
 
         fusedLocationProviderClient = new FusedLocationProviderClient(this);
 
@@ -159,6 +160,16 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(driverMap.this, driverSettings.class);
+                startActivity(intent);
+                return;
+            }
+        });
+
+        driverHistory.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(driverMap.this, history.class);
+                intent.putExtra("user", "driver");
                 startActivity(intent);
                 return;
             }

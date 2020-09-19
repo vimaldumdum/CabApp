@@ -195,6 +195,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(customerMap.this, history.class);
+                intent.putExtra("user", "customer");
                 startActivity(intent);
                 return;
             }
