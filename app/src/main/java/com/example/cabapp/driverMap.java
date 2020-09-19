@@ -62,7 +62,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
     LocationRequest mLocationRequest;
     LocationCallback mLocationCallback;
     FusedLocationProviderClient fusedLocationProviderClient;
-    public LatLng mLastLocation;
+    private LatLng mLastLocation;
 
     private List<Polyline> polylines;
     private static final int[] COLORS = new int[]{R.color.primary_dark_material_light};
@@ -71,13 +71,17 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
     private LinearLayout customerInfo;
     private ImageView customerProfileImage;
     private TextView customerName, customerPhone, customerDestination;
-    private Button settingsButton;
+    private Button settingsButton, rideStatus;
 
     public String user = FirebaseAuth.getInstance().getCurrentUser().getUid();
     public String assignedCustomerId = "";
-    public String customerDesti = "";
+    public String destination = "";
     public Boolean working = false;
     public Boolean prevWorking = false;
+
+    private LatLng destinationLatLng;
+
+    private int status = 0;
 
     private Button logoutButton;
 
@@ -93,6 +97,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
         logoutButton = findViewById(R.id.logoutButton);
         settingsButton = findViewById(R.id.driverSettings);
 
+
         polylines = new ArrayList<>();
 
         customerInfo = (LinearLayout) findViewById(R.id.customerInfo);
@@ -100,6 +105,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
         customerName = (TextView) findViewById(R.id.customerName);
         customerPhone = (TextView) findViewById(R.id.customerPhone);
         customerDestination = (TextView) findViewById(R.id.customerDestination);
+        rideStatus = (Button) findViewById(R.id.rideStatus);
 
         fusedLocationProviderClient = new FusedLocationProviderClient(this);
 
@@ -128,6 +134,25 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
             }
         });
 
+        rideStatus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                switch (status) {
+                    case 1:
+                        status = 2;
+                        erasePolyLines();
+                        if (destinationLatLng.latitude != 0.0 && destinationLatLng.longitude != 0.0) {
+                            drawRouteToPickup(destinationLatLng);
+                        }
+                        rideStatus.setText("Ride complete");
+                        break;
+                    case 2:
+                        endRide();
+                        break;
+                }
+            }
+        });
+
         settingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -152,8 +177,9 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
 
                 if (snapshot.exists()) {
                     Map<String, Object> mapC = (Map<String, Object>) snapshot.getValue();
+                    status = 1;
                     assignedCustomerId = mapC.get("customerRideId").toString();
-                    customerDesti = mapC.get("destination").toString();
+                    destination = mapC.get("destination").toString();
                     working = true;
                     DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("users").child("customer").child(assignedCustomerId);
                     ref.addValueEventListener(new ValueEventListener() {
@@ -162,16 +188,16 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
                             Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
 
                             if (map.get("name") != null) {
-                                customerName.setText(map.get("name").toString());
+                                customerName.setText("Customer Name: " + map.get("name").toString());
                             }
                             if (map.get("phone") != null) {
-                                customerPhone.setText(map.get("phone").toString());
+                                customerPhone.setText("Customer Phone: " + map.get("phone").toString());
                             }
                             if (map.get("profilePicture") != null) {
                                 String imageUri = map.get("profilePicture").toString();
                                 Glide.with(driverMap.this).load(imageUri).into(customerProfileImage);
                             }
-                            customerDestination.setText(customerDesti);
+                            customerDestination.setText("Destination: " + destination);
                             customerInfo.setVisibility(View.VISIBLE);
                         }
 
@@ -180,15 +206,11 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
 
                         }
                     });
-
+                    getAssignedCustomerDestination();
                     getAssignedCustomerLocation();
                 } else {
                     working = false;
-                    if (customerLocationMarker != null)
-                        customerLocationMarker.remove();
-                    assignedCustomerId = null;
-                  /*  if(refListener != null)
-                        ref.removeEventListener(refListener);*/
+                    endRide();
                 }
             }
 
@@ -197,6 +219,51 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
 
             }
         });
+    }
+
+    public void getAssignedCustomerDestination() {
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(userId).child("customerRequest");
+        ref.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
+                    Double destinationLt = 0.0, destinationLn = 0.0;
+                    if (map.get("destinationLat") != null) {
+                        destinationLt = Double.valueOf(map.get("destinationLat").toString());
+                    }
+                    if (map.get("destinationLng") != null) {
+                        destinationLn = Double.valueOf(map.get("destinationLng").toString());
+                        destinationLatLng = new LatLng(destinationLt, destinationLn);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
+    }
+
+    private void endRide() {
+        rideStatus.setText("Picked customer");
+        erasePolyLines();
+
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(userId).child("customerRequest");
+        driverRef.removeValue();
+
+        DatabaseReference databaseReference1 = FirebaseDatabase.getInstance().getReference().child("customerRequests");
+        GeoFire geoFire = new GeoFire(databaseReference1);
+        geoFire.removeLocation(assignedCustomerId);
+        assignedCustomerId = "";
+
+        if (customerLocationMarker != null)
+            customerLocationMarker.remove();
+
     }
 
     Marker customerLocationMarker;

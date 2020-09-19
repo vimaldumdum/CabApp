@@ -71,6 +71,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
     private Boolean requested = false;
 
     private String destination = "ABC";
+    private LatLng destinationLatLng;
 
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest mLocationRequest;
@@ -98,6 +99,8 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
         String apiKey = getString(R.string.api_key);
         Places.initialize(getApplicationContext(), apiKey);
         PlacesClient placesClient = Places.createClient(this);
+
+        destinationLatLng = new LatLng(0.0, 0.0);
 
         Button logout = findViewById(R.id.logoutCustomer);
         requestCab = findViewById(R.id.requestCab);
@@ -148,36 +151,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
             public void onClick(View view) {
 
                 if (requested) {
-                    requested = false;
-
-                    geoQuery.removeAllListeners();
-                    if (driverLocationRefListener != null)
-                        driverLocationRef.removeEventListener(driverLocationRefListener);
-
-                    if (driverFoundId != null) {
-                        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(driverFoundId).child("customerRequest");
-                        databaseReference.removeValue();
-                        Log.d("removeLog", "sdf");
-                        driverFoundId = null;
-                    }
-                    driverFound = false;
-
-                    DatabaseReference databaseReference1 = FirebaseDatabase.getInstance().getReference().child("customerRequests");
-                    GeoFire geoFire = new GeoFire(databaseReference1);
-                    geoFire.removeLocation(userId);
-
-                    if (driverMarker != null)
-                        driverMarker.remove();
-                    if (pickupMarker != null)
-                        pickupMarker.remove();
-                    driverInfo.setVisibility(View.INVISIBLE);
-                    requestCab.setText("Find cab");
-
-                    driverInfo.setVisibility(View.GONE);
-                    radioLayout.setVisibility(View.VISIBLE);
-                    driverName.setText("");
-                    driverCar.setText("");
-                    driverPhone.setText("");
+                    endRide();
                 } else {
                     requested = true;
                     requestCab.setText("requesting cab...");
@@ -224,6 +198,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
             @Override
             public void onPlaceSelected(Place place) {
                 destination = place.getName().toString();
+                destinationLatLng = place.getLatLng();
             }
 
             @Override
@@ -267,10 +242,13 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                                     HashMap map = new HashMap();
                                     map.put("customerRideId", userId);
                                     map.put("destination", destination);
+                                    map.put("destinationLat", destinationLatLng.latitude);
+                                    map.put("destinationLng", destinationLatLng.longitude);
                                     driverRef.updateChildren(map);
 
                                     requestCab.setText("Looking for driver Location");
                                     radioLayout.setVisibility(View.GONE);
+                                    driveEnded();
                                     getAssignedDriverInfo();
                                     getDriverLocation();
                                 }
@@ -320,17 +298,17 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                     Map<String, Object> map = (Map<String, Object>) snapshot.getValue();
                     String name, car, phone;
                     if (map.get("name") != null) {
-                        driverName.setText(map.get("name").toString());
+                        driverName.setText("Driver Name: " + map.get("name").toString());
                     }
                     if (map.get("phone") != null) {
-                        driverPhone.setText(map.get("phone").toString());
+                        driverPhone.setText("Driver Phone: " + map.get("phone").toString());
                     }
                     if (map.get("profilePicture") != null) {
                         String imageUri = map.get("profilePicture").toString();
                         Glide.with(customerMap.this).load(imageUri).into(driverProfileImage);
                     }
                     if (map.get("car") != null) {
-                        driverCar.setText(map.get("car").toString());
+                        driverCar.setText("Driver Car: " + map.get("car").toString());
                     }
                 }
             }
@@ -385,10 +363,31 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
                     } else {
                         Toast.makeText(customerMap.this, "driver is " + String.valueOf(distance) + "m away.", Toast.LENGTH_SHORT).show();
                     }
-
-
                 }
+            }
 
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+
+    }
+
+    private DatabaseReference driveEndedRef;
+    private ValueEventListener driverEndedRefListener;
+
+    private void driveEnded() {
+
+        driveEndedRef = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(driverFoundId).child("customerRequest");
+        driverEndedRefListener = driveEndedRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                if (snapshot.exists()) {
+
+                } else {
+                    endRide();
+                }
             }
 
             @Override
@@ -396,9 +395,42 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
 
             }
         });
-
     }
 
+    private void endRide() {
+        requested = false;
+
+        geoQuery.removeAllListeners();
+        if (driverLocationRefListener != null)
+            driverLocationRef.removeEventListener(driverLocationRefListener);
+        if (driverEndedRefListener != null)
+            driveEndedRef.removeEventListener(driverEndedRefListener);
+
+        if (driverFoundId != null) {
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(driverFoundId).child("customerRequest");
+            databaseReference.removeValue();
+            Log.d("removeLog", "sdf");
+            driverFoundId = null;
+        }
+        driverFound = false;
+
+        DatabaseReference databaseReference1 = FirebaseDatabase.getInstance().getReference().child("customerRequests");
+        GeoFire geoFire = new GeoFire(databaseReference1);
+        geoFire.removeLocation(userId);
+
+        if (driverMarker != null)
+            driverMarker.remove();
+        if (pickupMarker != null)
+            pickupMarker.remove();
+        driverInfo.setVisibility(View.INVISIBLE);
+        requestCab.setText("Find cab");
+
+        driverInfo.setVisibility(View.GONE);
+        radioLayout.setVisibility(View.VISIBLE);
+        driverName.setText("");
+        driverCar.setText("");
+        driverPhone.setText("");
+    }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
