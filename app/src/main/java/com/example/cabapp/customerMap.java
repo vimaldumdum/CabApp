@@ -83,6 +83,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
     private LinearLayout driverInfo;
     private RadioGroup radioGroup;
     LinearLayout radioLayout;
+    private Button history;
 
     private String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
     private String service = "";
@@ -113,6 +114,7 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
         driverInfo = (LinearLayout) findViewById(R.id.driverInfo);
         radioGroup = (RadioGroup) findViewById(R.id.radioGroup);
         radioLayout = (LinearLayout) findViewById(R.id.radioLayout);
+        history = (Button) findViewById(R.id.customerHistory);
 
         fusedLocationProviderClient = new FusedLocationProviderClient(this);
 
@@ -184,6 +186,15 @@ public class customerMap extends FragmentActivity implements OnMapReadyCallback 
             public void onClick(View view) {
 
                 Intent intent = new Intent(customerMap.this, customerSettings.class);
+                startActivity(intent);
+                return;
+            }
+        });
+
+        history.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(customerMap.this, history.class);
                 startActivity(intent);
                 return;
             }
