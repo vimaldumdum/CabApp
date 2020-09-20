@@ -80,7 +80,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
     public Boolean working = false;
     public Boolean prevWorking = false;
 
-    private LatLng destinationLatLng;
+    private LatLng destinationLatLng, customerPickupLatLng;
 
     private int status = 0;
 
@@ -295,6 +295,11 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
         map.put("driver", userId);
         map.put("customer", assignedCustomerId);
         map.put("timestamp", getTimeStamp());
+        map.put("destination", destination);
+        map.put("location/from/lat", customerPickupLatLng.latitude);
+        map.put("location/from/lng", customerPickupLatLng.longitude);
+        map.put("location/to/lat", destinationLatLng.latitude);
+        map.put("location/to/lng", destinationLatLng.longitude);
         map.put("rating", 0);
 
         historyRef.child(requestId).updateChildren(map);
@@ -324,7 +329,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
                     if (map.get(1) != null)
                         customerLocationLng = Double.parseDouble(map.get(1).toString());
 
-                    LatLng customerPickupLatLng = new LatLng(customerLocationLat, customerLocationLng);
+                    customerPickupLatLng = new LatLng(customerLocationLat, customerLocationLng);
 
                     if (customerLocationMarker != null)
                         customerLocationMarker.remove();
