@@ -1,31 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".driverMap">
+    tools:context=".driverMap"
+    android:orientation="vertical">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-    <Button
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/logout"
+            android:id="@+id/logoutButton"
+            android:layout_weight="1" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="history"
+            android:layout_gravity="center_horizontal"
+            android:id="@+id/driverHistory"
+            android:layout_weight="1" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Settings"
+            android:id="@+id/driverSettings"
+            android:layout_gravity="right"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+    <Switch
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/logout"
-        android:id="@+id/logoutButton" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="history"
-        android:layout_gravity="center_horizontal"
-        android:id="@+id/driverHistory" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Settings"
-        android:id="@+id/driverSettings"
-        android:layout_gravity="right" />
+        android:text="@string/working"
+        android:layout_marginStart="15sp"
+        android:id="@+id/workingSwitch"
+        tools:ignore="UseSwitchCompatOrMaterialXml" />
 
     <fragment
         android:id="@+id/map"
@@ -90,4 +107,4 @@
             android:id="@+id/rideStatus" />
 
     </LinearLayout>
-</FrameLayout>
+</LinearLayout>

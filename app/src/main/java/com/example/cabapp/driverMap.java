@@ -10,8 +10,10 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -73,6 +75,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
     private ImageView customerProfileImage;
     private TextView customerName, customerPhone, customerDestination;
     private Button settingsButton, rideStatus, driverHistory;
+    private Switch workingSwitch;
 
     public String user = FirebaseAuth.getInstance().getCurrentUser().getUid();
     public String assignedCustomerId = "";
@@ -108,6 +111,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
         customerDestination = (TextView) findViewById(R.id.customerDestination);
         rideStatus = (Button) findViewById(R.id.rideStatus);
         driverHistory = (Button) findViewById(R.id.driverHistory);
+        workingSwitch = (Switch) findViewById(R.id.workingSwitch);
 
         fusedLocationProviderClient = new FusedLocationProviderClient(this);
 
@@ -118,8 +122,6 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
                 onLocationChanged(locationResult.getLastLocation());
             }
         };
-
-        startLocationUpdates();
 
         logoutButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -175,7 +177,64 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
             }
         });
 
+        workingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (b) {
+                    startLocationUpdates();
+                } else {
+                    if (working)
+                        stopGeoFireWorking();
+                    else
+                        stopGeoFireAvailable();
+                    stopLocationUpdates();
+                }
+            }
+        });
+
         getAssignedCustomer();
+        checkIfWorking();
+    }
+
+    private void checkIfWorking() {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("driversAvailable");
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    for (DataSnapshot child : snapshot.getChildren()) {
+                        if (child.getKey().equals(user)) {
+                            workingSwitch.setChecked(true);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
+        ref = FirebaseDatabase.getInstance().getReference().child("driversWorking");
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    for (DataSnapshot child : snapshot.getChildren()) {
+                        if (child.getKey().equals(user)) {
+                            workingSwitch.setChecked(true);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
     }
 
     private DatabaseReference ref;
@@ -476,22 +535,6 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
         });
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (working)
-            stopGeoFireWorking();
-        else
-            stopGeoFireAvailable();
-        stopLocationUpdates();
-        //  Toast.makeText(this, "driver removed", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        startLocationUpdates();
-    }
 
     @Override
     public void onRoutingFailure(RouteException e) {
