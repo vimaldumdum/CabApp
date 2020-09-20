@@ -65,7 +65,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
     LocationRequest mLocationRequest;
     LocationCallback mLocationCallback;
     FusedLocationProviderClient fusedLocationProviderClient;
-    private LatLng mLastLocation;
+    private Location mLastLocation;
 
     private List<Polyline> polylines;
     private static final int[] COLORS = new int[]{R.color.primary_dark_material_light};
@@ -82,6 +82,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
     public String destination = "";
     public Boolean working = false;
     public Boolean prevWorking = false;
+    private float rideDistance;
 
     private LatLng destinationLatLng, customerPickupLatLng;
 
@@ -322,6 +323,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
 
     private void endRide() {
         rideStatus.setText("Picked customer");
+        rideDistance = 0;
         erasePolyLines();
 
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -359,6 +361,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
         map.put("location/from/lng", customerPickupLatLng.longitude);
         map.put("location/to/lat", destinationLatLng.latitude);
         map.put("location/to/lng", destinationLatLng.longitude);
+        map.put("distance", rideDistance);
         map.put("rating", 0);
 
         historyRef.child(requestId).updateChildren(map);
@@ -410,7 +413,7 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
                 .travelMode(AbstractRouting.TravelMode.DRIVING)
                 .withListener(this)
                 .alternativeRoutes(false)
-                .waypoints(mLastLocation, pickup)
+                .waypoints(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), pickup)
                 .build();
         routing.execute();
     }
@@ -465,12 +468,16 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
 
     public void onLocationChanged(Location location) {
         //  Toast.makeText(this, "location change", Toast.LENGTH_SHORT).show();
+
+        if (working) {
+            rideDistance += mLastLocation.distanceTo(location) / 1000;
+        }
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
         mMap.setMyLocationEnabled(true);
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        mLastLocation = latLng;
+        mLastLocation = location;
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(18));
 

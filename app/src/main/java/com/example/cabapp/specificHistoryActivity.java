@@ -1,5 +1,6 @@
 package com.example.cabapp;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.view.View;
@@ -45,6 +46,8 @@ public class specificHistoryActivity extends AppCompatActivity implements OnMapR
     private GoogleMap mMap;
     private SupportMapFragment mapFragment;
     private LatLng destinationLatLng, pickupLatLng;
+    private String rideDistance;
+    private Double ridePrice;
 
     private List<Polyline> polylines;
     private static final int[] COLORS = new int[]{R.color.primary_dark_material_light};
@@ -88,6 +91,7 @@ public class specificHistoryActivity extends AppCompatActivity implements OnMapR
 
         DatabaseReference otherUserRef = FirebaseDatabase.getInstance().getReference().child("users").child(type).child(otherId);
         otherUserRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @SuppressLint("SetTextI18n")
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
@@ -101,6 +105,11 @@ public class specificHistoryActivity extends AppCompatActivity implements OnMapR
                     }
                     if (map.get("profilePicture") != null) {
                         Glide.with(specificHistoryActivity.this).load(map.get("profilePicture")).into(profileImage);
+                    }
+                    if (map.get("distance") != null) {
+                        rideDistance = map.get("distance").toString();
+                        distance.setText(rideDistance.substring(0, Math.min(rideDistance.length(), 5)) + "km");
+                        ridePrice = Double.parseDouble(rideDistance) * 0.5;
                     }
                 }
             }
