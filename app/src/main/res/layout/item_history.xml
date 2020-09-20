@@ -11,7 +11,8 @@
         android:id="@+id/time"
         android:textSize="20dp"
         android:text="Time"
-        tools:ignore="MissingConstraints" />
+        tools:ignore="MissingConstraints"
+        android:layout_marginTop="20dp" />
 
     <TextView
         android:id="@+id/rideId"
