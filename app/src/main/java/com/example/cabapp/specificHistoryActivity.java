@@ -2,7 +2,9 @@ package com.example.cabapp;
 
 import android.os.Bundle;
 import android.text.format.DateFormat;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,6 +40,8 @@ public class specificHistoryActivity extends AppCompatActivity implements OnMapR
 
     private TextView rout, distance, name, phone, date;
     private ImageView profileImage;
+    private RatingBar ratingBar;
+
     private GoogleMap mMap;
     private SupportMapFragment mapFragment;
     private LatLng destinationLatLng, pickupLatLng;
@@ -61,6 +65,7 @@ public class specificHistoryActivity extends AppCompatActivity implements OnMapR
         name = (TextView) findViewById(R.id.name);
         phone = (TextView) findViewById(R.id.phone);
         date = (TextView) findViewById(R.id.date);
+        ratingBar = (RatingBar) findViewById(R.id.ratingBar);
 
         profileImage = (ImageView) findViewById(R.id.historyProfileImage);
 
@@ -128,11 +133,15 @@ public class specificHistoryActivity extends AppCompatActivity implements OnMapR
                             if (!driverId.equals(userId)) {
                                 userType = "customer";
                                 populateOtherUserInfo("driver", driverId);
+                                updateRating();
                             }
                         }
                         Long time = 0L;
                         if (child.getKey().equals("timestamp")) {
                             time = Long.valueOf(child.getValue().toString());
+                        }
+                        if (child.getKey().equals("rating")) {
+                            ratingBar.setRating(Integer.parseInt(child.getValue().toString()));
                         }
                         date.setText(getDate(time));
                         if (child.getKey().equals("destination")) {
@@ -151,6 +160,21 @@ public class specificHistoryActivity extends AppCompatActivity implements OnMapR
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
 
+            }
+        });
+    }
+
+    private void updateRating() {
+        ratingBar.setVisibility(View.VISIBLE);
+        ratingBar.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
+            @Override
+            public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
+
+                DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("history").child(rideId);
+                ref.child("rating").setValue(v);
+
+                DatabaseReference ref2 = FirebaseDatabase.getInstance().getReference().child("users").child("driver").child(driverId).child("rating").child(rideId);
+                ref2.setValue(v);
             }
         });
     }
