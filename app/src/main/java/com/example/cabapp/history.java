@@ -1,6 +1,7 @@
 package com.example.cabapp;
 
 import android.os.Bundle;
+import android.text.format.DateFormat;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -16,7 +17,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 import HistoryRelated.HistoryAdapter;
 import HistoryRelated.HistoryObject;
@@ -80,7 +83,13 @@ public class history extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    HistoryObject object = new HistoryObject(snapshot.getKey());
+                    Long timestamp = 0L;
+                    for (DataSnapshot child : snapshot.getChildren()) {
+                        if (child.getKey().equals("timestamp")) {
+                            timestamp = Long.valueOf(child.getValue().toString());
+                        }
+                    }
+                    HistoryObject object = new HistoryObject(snapshot.getKey(), getDate(timestamp));
                     resultHistory.add(object);
                     Log.d("meh", resultHistory.toString());
                     //    Toast.makeText(history.this, "item added", Toast.LENGTH_SHORT).show();
@@ -93,6 +102,13 @@ public class history extends AppCompatActivity {
 
             }
         });
+    }
+
+    private String getDate(Long timestamp) {
+        Calendar calendar = Calendar.getInstance(Locale.getDefault());
+        calendar.setTimeInMillis(timestamp * 1000);
+        String date = DateFormat.format("dd-MM-yyyy hh:mm", calendar).toString();
+        return date;
     }
 
 

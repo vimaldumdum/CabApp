@@ -294,9 +294,15 @@ public class driverMap extends FragmentActivity implements OnMapReadyCallback, R
         HashMap map = new HashMap();
         map.put("driver", userId);
         map.put("customer", assignedCustomerId);
+        map.put("timestamp", getTimeStamp());
         map.put("rating", 0);
 
         historyRef.child(requestId).updateChildren(map);
+    }
+
+    private Long getTimeStamp() {
+        Long time = System.currentTimeMillis() / 1000;
+        return time;
     }
 
     Marker customerLocationMarker;
